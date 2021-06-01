@@ -13,10 +13,14 @@ export const handle = async ({ request, resolve }) => {
 
 	const response = await resolve(request)
 
-	if (!cookies.data) {
+	if (request.locals.username !== '') {
 		// if this is the first time the user has visited this app,
 		// set a cookie so that we recognise them when they return
 		response.headers['set-cookie'] = `data=${request.locals.username}; Path=/; HttpOnly`
+	}
+
+	if (request.locals.logout) {
+		response.headers['set-cookie'] = `data=deleted; Path=/; HttpOnly`;
 	}
 
 	return response
