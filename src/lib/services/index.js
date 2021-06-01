@@ -33,7 +33,7 @@ function fetchToken(code, state) {
 function getUser(token) {
   return asyncFetch(userURL, {
     headers: {
-      Accept: 'application/vnd.githu.v3+json',
+      Accept: 'application/json',
       Authorization: `Bearer ${token}`
     }
   }).chain(toJSON)

@@ -10,6 +10,6 @@ export default function (services) {
 function createSession({ github }) {
   return function (code, state) {
     return github.fetchToken(code, state)
-      .chain(github.fetchUser)
+      .chain(github.getUser)
   }
 }
