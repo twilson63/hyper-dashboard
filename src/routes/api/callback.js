@@ -1,12 +1,11 @@
-import createCore from '$lib/core.js'
+import { session } from '../../core/index.js'
+import services from '../../services/index.js'
 
 export const get = async (req) => {
-  const { session } = createCore()
-
   const code = req.query.get('code')
-  const state = req.query.get('state')
   const user = await session
-    .create(code, state)
+    .create(code)
+    .runWith(services)
     .toPromise()
 
   req.locals.username = user.login

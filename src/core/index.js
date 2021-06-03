@@ -1,25 +1,14 @@
-import * as apps from './apps.js'
+import { post, put } from './apps.js'
 import * as hyper from './hyper.js'
+import { createSession } from './session.js'
 
-export default function (services) {
-
-  return {
-    session: {
-      create: createSession(services)
-    },
-    apps: {
-      create: user => apps.post(user)
-        .chain(hyper.create)
-        .map(assoc('status', 'active'))
-        .chain(apps.update)
-    }
-  }
+export const apps = {
+  create: user => post(user)
+    .chain(hyper.create)
+    .chain(doc => put(doc.id, doc))
+    .map(() => ({ ok: true }))
 }
 
-// create auth session
-function createSession({ github }) {
-  return function (code, state) {
-    return github.fetchToken(code, state)
-      .chain(github.getUser)
-  }
+export const session = {
+  create: createSession
 }

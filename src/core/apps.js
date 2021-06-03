@@ -1,27 +1,29 @@
 import { customAlphabet, nanoid } from 'nanoid'
-import { ReaderAsync } from './utils.js'
+import { of, ask, lift } from './utils.js'
+import { assoc, lensProp, over } from 'ramda'
 
 const genKey = () => 'x' + customAlphabet('1234567890abcdefghijklmnopqrstuvxyz', 31)()
 const genSecret = () => nanoid(64)
-const { ask, lift } = ReaderAsync
 
-export const post = (app, account) => {
-  const key = genKey()
-  const secret = genSecret()
-  const app = {
-    id: key,
-    type: 'app',
-    app,
-    key,
-    secret,
-    accountId: account,
-    status: 'pending'
-  }
-  return ask(({ start: { data } }) =>
-    data.post(app).map(() => app)
-  ).chain(lift)
-}
+export const post = (app, accountId = app) =>
+  of({ app, accountId })
+    .map(over(lensProp('key'), genKey))
+    .map(over(lensProp('secret'), genSecret))
+    .map(doc => assoc('id', doc.key, doc))
+    .map(assoc('type', 'app'))
+    .map(assoc('status', 'pending'))
+    .chain(doc =>
+      ask(({ start: { data } }) =>
+        data.post(doc).map(() => doc)
 
-export const put = doc => ask(
-  ({ start: { data } }) => data.put(doc).map(() => doc)
-).chain(lift)
+      )
+
+    )
+
+    .chain(lift)
+
+export const put = (id, doc) => of(doc)
+  .chain(doc => ask(
+    ({ start: { data } }) => data.put(id, doc).map(() => doc)
+  ))
+  .chain(lift)

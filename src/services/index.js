@@ -22,7 +22,7 @@ const createHyperToken = (secret) => jwt.sign({ sub: 'dashboard' }, secret)
 export const start = {
   data: {
     post: doc => post(createStartUrl(), createStartToken(), doc),
-    put: doc => put(createStartUrl(), createStartToken(), doc)
+    put: (id, doc) => put(`${createStartUrl()}/${id}`, createStartToken(), doc)
   }
 }
 

@@ -1,3 +1,8 @@
-import { Async, ReaderT } from 'crocks'
+import crocks from 'crocks'
+const { Async, ReaderT } = crocks
 
-export const ReaderAsync = ReaderT(Async)
+const ReaderAsync = ReaderT(Async)
+
+export const of = ReaderAsync.of
+export const ask = ReaderAsync.ask
+export const lift = ReaderAsync.lift
