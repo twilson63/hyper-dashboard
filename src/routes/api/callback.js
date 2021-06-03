@@ -1,8 +1,7 @@
-import * as services from '$lib/services/index.js'
-import core from '$lib/core/index.js'
+import createCore from '$lib/core.js'
 
 export const get = async (req) => {
-  const { session } = core(services)
+  const { session } = createCore()
 
   const code = req.query.get('code')
   const state = req.query.get('state')
