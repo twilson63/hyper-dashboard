@@ -1,87 +1,75 @@
-import fetch from 'node-fetch'
-import { Async } from 'crocks'
+import crocks from 'crocks'
 import { prop } from 'ramda'
-import hyper from '@hyper.io/connect'
+import utils from './utils.js'
+import connect from './connect.js'
+import dotenv from 'dotenv'
 
-const asyncFetch = Async.fromPromise(fetch)
-const toJSON = res => Async.fromPromise(res.json.bind(res))()
+if (process.env.NODE_ENV !== 'production') {
+  dotenv.config()
+}
 
-const clientId = import.meta.env.VITE_CLIENT_ID
-const secret = import.meta.env.VITE_CLIENT_SECRET
+const clientId = process.env.CLIENT_ID
+const secret = process.env.CLIENT_SECRET
 const tokenURL = 'https://github.com/login/oauth/access_token'
 const userURL = 'https://api.github.com/user'
 
-const startConnectString = import.meta.env.VITE_START_SERVICE
+const startConnectString = process.env.START_SERVICE
 
-const createStartUrl = () => hyper(startConnectString).url('data')
-const createStartToken = () => hyper(startConnectString).token()
+const createStartUrl = () => connect(startConnectString).url('data')
+const createStartToken = () => connect(startConnectString).token()
 
 const createHyperUrl = (app, svc) => `https://dev.hyper63.com/${svc}/${app.app}`
 const createHyperToken = (secret) => jwt.sign({ sub: 'dashboard' }, secret)
 
-export const start = {
-  data: {
-    post: doc => post(createStartUrl(), createStartToken(), doc),
-    put: (id, doc) => put(`${createStartUrl()}/${id}`, createStartToken(), doc)
-  }
-}
+const { asyncFetch, toJSON } = utils
 
-export const dev = {
-  data: {
-    create: app => put(createHyperUrl(app, 'data'), createHyperToken(app.secret))
-  },
-  cache: {
-    create: app => put(createHyperUrl(app, 'cache'), createHyperToken(app.secret))
-  },
-  search: {
-    create: app => put(createHyperUrl(app, 'search'), createHyperToken(app.secret))
-  }
-}
+export default function (fetch) {
+  const { asyncFetch, toJSON, post, put } = utils(fetch)
 
-export const github = {
-  fetchToken,
-  getUser
-}
-
-function put(url, token, body = {}) {
-  return asyncFetch(url, {
-    method: 'PUT',
-    headers: {
-      Authorization: `Bearer ${token}`
-    },
-    body: JSON.stringify(body)
-  }).chain(toJSON)
-}
-
-function post(url, token, body = {}) {
-  return asyncFetch(url, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${token}`
-    },
-    body: JSON.stringify(body)
-  }).chain(toJSON)
-}
-
-function fetchToken(code, state) {
-  return asyncFetch(tokenURL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-    body: JSON.stringify({
-      client_id: clientId,
-      client_secret: secret,
-      code, state
+  function fetchToken(code, state) {
+    return asyncFetch(tokenURL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({
+        client_id: clientId,
+        client_secret: secret,
+        code, state
+      })
     })
-  })
-    .chain(toJSON)
-    .map(prop('access_token'))
-}
+      .chain(toJSON)
+      .map(prop('access_token'))
+  }
 
-function getUser(token) {
-  return asyncFetch(userURL, {
-    headers: {
-      Accept: 'application/json',
-      Authorization: `Bearer ${token}`
+  function getUser(token) {
+    return asyncFetch(userURL, {
+      headers: {
+        Accept: 'application/json',
+        Authorization: `Bearer ${token}`
+      }
+    }).chain(toJSON)
+  }
+
+  return Object.freeze({
+    start: {
+      data: {
+        post: doc => post(createStartUrl(), createStartToken(), doc),
+        put: (id, doc) => put(`${createStartUrl()}/${id}`, createStartToken(), doc)
+      }
+    },
+    dev: {
+      data: {
+        create: app => put(createHyperUrl(app, 'data'), createHyperToken(app.secret))
+      },
+      cache: {
+        create: app => put(createHyperUrl(app, 'cache'), createHyperToken(app.secret))
+      },
+      search: {
+        create: app => put(createHyperUrl(app, 'search'), createHyperToken(app.secret))
+      }
+    },
+    github: {
+      fetchToken,
+      getUser
     }
-  }).chain(toJSON)
+  })
 }

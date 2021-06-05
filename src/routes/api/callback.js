@@ -1,13 +1,8 @@
-import { session } from '../../core/index.js'
-import services from '../../services/index.js'
+import { session, run } from '$lib/core.js'
 
 export const get = async (req) => {
   const code = req.query.get('code')
-  const user = await session
-    .create(code)
-    .runWith(services)
-    .toPromise()
-
+  const user = await run(session.create(code))
   req.locals.username = user.login
   // need to handle error...
   return {
